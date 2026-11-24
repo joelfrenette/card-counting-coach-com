@@ -1,0 +1,25 @@
+name: Strix Security Scan
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  strix-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Strix diff-scopes PRs; needs full history
+
+      - name: Install Strix
+        run: pipx install strix-agent==1.7.0 # pinned on purpose; was an unpinned curl | bash
+
+      - name: Run Security Scan
+        env:
+          STRIX_LLM: ${{ secrets.STRIX_LLM }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        # quick = minutes per PR; fail only on high/critical so low findings don't block merges
+        run: strix -n -t ./ --scan-mode quick --fail-on high
